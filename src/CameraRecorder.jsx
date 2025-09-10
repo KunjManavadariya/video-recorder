@@ -638,7 +638,7 @@ const CameraRecorder = () => {
             style={{
               position: "relative",
               margin: "1rem",
-              color: "rgba(255,255,255,0.7)",
+              // color: "rgba(255,255,255,0.7)",
               fontSize: "1.2rem",
               textAlign: "center",
             }}

@@ -229,6 +229,7 @@ h1 {
   position: absolute;
   top: 1rem;
   right: 1rem;
+  bottom: 1rem;
   background: rgba(255, 107, 107, 0.9);
   color: white;
   padding: 0.5rem 1rem;
