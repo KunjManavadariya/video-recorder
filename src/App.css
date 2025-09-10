@@ -1,8 +1,9 @@
 #root {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  width: 1280px;
 }
 
 .logo {
@@ -16,6 +17,10 @@
 }
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
+}
+.video-container video {
+  max-width: 100% !important;
+  height: auto !important;
 }
 
 @keyframes logo-spin {
