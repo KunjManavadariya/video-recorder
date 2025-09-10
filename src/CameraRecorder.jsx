@@ -577,9 +577,112 @@ const CameraRecorder = () => {
 
     if (isPreviewing) {
       stopPreview();
-      // Small delay to ensure cleanup
-      setTimeout(() => {
-        startPreview();
+      // Small delay to ensure cleanup and state update
+      setTimeout(async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: newFacingMode,
+              width: {
+                ideal:
+                  videoQuality === "1080p"
+                    ? 1920
+                    : videoQuality === "720p"
+                    ? 1280
+                    : 640,
+              },
+              height: {
+                ideal:
+                  videoQuality === "1080p"
+                    ? 1080
+                    : videoQuality === "720p"
+                    ? 720
+                    : 480,
+              },
+              frameRate: { ideal: 30, max: 60 },
+            },
+            audio: true,
+          });
+
+          videoStreamRef.current = stream;
+          videoRef.current.srcObject = stream;
+          setIsPreviewing(true);
+
+          const video = videoRef.current;
+          await video.play();
+
+          const draw = () => {
+            if (!video.videoWidth || !video.videoHeight) {
+              animationFrameRef.current = requestAnimationFrame(draw);
+              return;
+            }
+
+            updatePerformanceMetrics();
+
+            const width = video.videoWidth;
+            const height = video.videoHeight;
+            const canvas = canvasRef.current;
+
+            if (canvas.width !== width || canvas.height !== height) {
+              canvas.width = width;
+              canvas.height = height;
+            }
+
+            const ctx = ctxRef.current;
+            let targetCanvas = canvas;
+            let targetCtx = ctx;
+
+            if (
+              offscreenCanvasRef.current &&
+              (brightness !== 100 || contrast !== 100 || saturation !== 100)
+            ) {
+              const offscreen = offscreenCanvasRef.current;
+              if (offscreen.width !== width || offscreen.height !== height) {
+                offscreen.width = width;
+                offscreen.height = height;
+              }
+              targetCanvas = offscreen;
+              targetCtx = offscreen.getContext("2d");
+            }
+
+            targetCtx.clearRect(0, 0, width, height);
+            targetCtx.filter = applyFilters();
+            targetCtx.save();
+
+            if (mirror) {
+              targetCtx.scale(-1, 1);
+              targetCtx.translate(-width, 0);
+            }
+
+            targetCtx.drawImage(video, 0, 0, width, height);
+            targetCtx.restore();
+
+            if (targetCanvas !== canvas) {
+              ctx.clearRect(0, 0, width, height);
+              ctx.drawImage(targetCanvas, 0, 0);
+            }
+
+            if (isPreviewing) {
+              const targetFPS = 30;
+              const delay = 1000 / targetFPS;
+              setTimeout(() => {
+                animationFrameRef.current = requestAnimationFrame(draw);
+              }, delay);
+            }
+          };
+
+          video.addEventListener("loadedmetadata", () => {
+            draw();
+          });
+        } catch (err) {
+          console.error("Error switching camera:", err);
+          setError(`Failed to switch camera: ${err.message}`);
+        } finally {
+          setIsLoading(false);
+        }
       }, 100);
     }
   };
